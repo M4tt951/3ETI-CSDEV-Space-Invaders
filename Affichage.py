@@ -1,13 +1,15 @@
 import tkinter as tk
+class Affichage:
+        def __init__(self): 
+            self.mw=tk.Tk()
+            self.mw.title("Space Invaders")
+            self.mw.geometry('1200x830')
+            Titre = tk.Label(self.mw, text="Space Invaders", fg = 'black')
+            Titre.pack(pady= 10)
+            button_options = tk.Button(self.mw, text ="Options", fg='black')
+            button_options.pack(pady =100)
+            buttonquit = tk.Button(self.mw, text="Quitter", fg='red', command=self.mw.quit)
+            buttonquit.pack(pady=50)
+            self.mw.mainloop()
 
-SI = tk.Tk()
-SI.title("Space Invaders")
-SI.geometry('1190x780')
-Titre = tk.Label(SI, text="Space Invaders", fg = 'black')
-Titre.pack(pady= 10)
-button_options = tk.Button(SI, text ="Options", fg='black')
-button_options.pack(pady =100)
-buttonquit = tk.Button(SI, text="Quitter", fg='red', command=SI.destroy)
-buttonquit.pack(pady=50)
-SI.mainloop()
-
+Affichage()
