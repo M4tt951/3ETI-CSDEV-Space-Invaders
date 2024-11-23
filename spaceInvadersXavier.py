@@ -83,7 +83,7 @@ class protectionJoueur() :
         # affichage de l'image de la protection 
         self.affichage = tk.Canvas(fenetre, width=self.largeur, height=self.longueur)
         # creation de l'image
-        self.imageProtec = tk.PhotoImage(file="protec.png")
+        self.imageProtec = tk.PhotoImage(file="./images/protec.png")
         # affichage de l'image dans le canva
         self.canvaVaisseau.create_image(self.posX, self.posY, anchor='n', image=self.imageProtec)
 
@@ -118,7 +118,7 @@ class blocProtectionsJoueur() :
                 # affichage de l'image de la protection 
                 self.protec = tk.Canvas(fenetre, width=self.largeur, height=self.longueur)
                 # creation de l'image
-                self.imageProtec = tk.PhotoImage(file="protec.png")
+                self.imageProtec = tk.PhotoImage(file="./images/protec.png")
                 # affichage de l'image dans le canva
                 self.protec.create_image(self.posX, self.posY, anchor='n', image=self.imageProtec)
                 ligne.append(self.imageProtec)
@@ -143,7 +143,7 @@ class vaisseauJoueur() :
         # creation du canva
         self.canvaVaisseau = tk.Canvas(self.fenetre.root, width=self.largeur, height=self.longueur)
         # creation de l'image
-        self.imageVaisseau = tk.PhotoImage(file="vaisseau.png")
+        self.imageVaisseau = tk.PhotoImage(file="./images/vaisseau.png")
         # affichage de l'image dans le canva
         self.canvaVaisseau.create_image(self.posX, self.posY, anchor='n', image=self.imageVaisseau)
 
