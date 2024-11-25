@@ -13,8 +13,8 @@ import random
 import time
 
 class Joueur:
-    def __init__(self, canvas, x, y, largeur, longueur, vitesse):
-        self.canvas = canvas  # Référence au canevas principal
+    def __init__(self, app, x, y, largeur, longueur, vitesse):
+        self.canvas = app  # Référence au canevas principal
         self.x = x
         self.y = y
         self.largeur = largeur
@@ -63,8 +63,8 @@ class Joueur:
     
 
 class Alien:
-    def __init__(self, canvas, x, y, largeur, longueur, vitesse):
-        self.canvas = canvas
+    def __init__(self, app, x, y, largeur, longueur, vitesse):
+        self.canvas = app
         self.x = x
         self.y = y
         self.largeur = 50
@@ -109,7 +109,7 @@ class Alien:
         x = (coords[0]+coords[2])/2
         y = coords[3]
 
-        laser = LaserAlien(self.canvas, x - 5, y, largeur = 10, longueur = 20, vitesse = 5)
+        laser = LaserAlien(self.canvas, x - 5, y, largeur = 10, longueur = 20, vitesse = 5, affichage = self.canvas.master)
         laser.move(joueur)
 
 
@@ -123,8 +123,8 @@ def collision(Coords1, Coords2):
     )
 
 class Projectile:
-    def __init__(self, canvas, x, y, largeur, longueur, vitesse_proj, aliens):
-        self.canvas = canvas
+    def __init__(self, app, x, y, largeur, longueur, vitesse_proj, aliens):
+        self.canvas = app
         self.x = x
         self.y = y
         self.largeur = 10
@@ -156,13 +156,14 @@ class Projectile:
         self.canvas.after(20, self.move)
 
 class LaserAlien:
-    def __init__(self, canvas, x, y, largeur, longueur, vitesse):
-        self.canvas = canvas
+    def __init__(self, app, x, y, largeur, longueur, vitesse, affichage ):
+        self.canvas = app
         self.x = x
         self.y = y 
         self.largeur = largeur
         self.longueur = longueur
         self.vitesse = vitesse
+        self.affichage = affichage
         self.laser = self.canvas.create_rectangle( self.x, self.y , self.x + self.largeur, self.y + self.longueur, fill ="yellow")
 
     def move(self, joueur):
@@ -179,7 +180,7 @@ class LaserAlien:
             joueur.coeur = joueur.coeur - 1
             if joueur.coeur == 0:
                 self.canvas.delete(joueur.joueur)
-                Affichage.game_over()
+                self.affichage.game_over()
 
         self.canvas.after(20, self.move, joueur)
         
@@ -264,8 +265,10 @@ class Affichage:
     def game_over(self):
         self.jeu_terminé = True
 
-        self.canvas.create_rectangle(0, 0 , 1200, 800, fill ="black", outline ="black")
-        self.canvas.create_text(600, 400, text=" Game Over ", fill = "red", font=("Times new roman", 200))
+        print("la")
+
+        self.canvas.create_rectangle(0, 0 , 1200, 800, fill ="red", outline ="red")
+        self.canvas.create_text(600, 400, text=" Game Over ", fill = "red", font=("Purisan", 200))
 
 
 # Lancer l'application
