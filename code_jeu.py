@@ -9,6 +9,8 @@ import tkinter as tk
 ### ------------------------------------------------- ###
 
 import tkinter as tk
+import random
+import time
 
 class Joueur:
     def __init__(self, canvas, x, y, largeur, longueur, vitesse):
@@ -19,6 +21,8 @@ class Joueur:
         self.longueur = longueur
         self.vitesse = vitesse
         self.direction = 0
+        self.coeur = 3
+        self.dernier_tir = 0
 
         # Créer le joueur comme un rectangle
         self.joueur = self.canvas.create_rectangle(
@@ -44,6 +48,7 @@ class Joueur:
     def Position(self):
         return(self.canvas.coords(self.joueur))    
     
+    
     def mouvement_continue(self):
         if self.direction != 0:
             coords = self.canvas.coords(self.joueur)
@@ -56,10 +61,6 @@ class Joueur:
         self.canvas.after(20, self.mouvement_continue)
 
     
-    def Tirer(self, event):
-
-        self.projectile = Projectile(self.canvas, self.canvas.coords(self.joueur.joueur)[0], self.canvas.coords(self.joueur.joueur)[1], largeur = 10, longueur = 20, vitesse_proj= 20)
-        self.root.bind("<Alt_L>", self.projectile.Lancement)
 
 class Alien:
     def __init__(self, canvas, x, y, largeur, longueur, vitesse):
@@ -103,6 +104,15 @@ class Alien:
         # Répéter le mouvement
         self.canvas.after(10, self.deplacement)
 
+    def tirer_laser(self, joueur):
+        coords = self.canvas.coords(self.alien)
+        x = (coords[0]+coords[2])/2
+        y = coords[3]
+
+        laser = LaserAlien(self.canvas, x - 5, y, largeur = 10, longueur = 20, vitesse = 5)
+        laser.move(joueur)
+
+
 
 def collision(Coords1, Coords2):
         return not (
@@ -135,7 +145,7 @@ class Projectile:
         
         if projectile_coords[1] < 0:
             self.canvas.delete(self.projectile)
-            return
+            
 
         for aliens in self.aliens:
             aliens_coords = self.canvas.coords(aliens.alien)
@@ -144,6 +154,35 @@ class Projectile:
                 self.canvas.delete(self.projectile)
                 self.aliens.remove(aliens)
         self.canvas.after(20, self.move)
+
+class LaserAlien:
+    def __init__(self, canvas, x, y, largeur, longueur, vitesse):
+        self.canvas = canvas
+        self.x = x
+        self.y = y 
+        self.largeur = largeur
+        self.longueur = longueur
+        self.vitesse = vitesse
+        self.laser = self.canvas.create_rectangle( self.x, self.y , self.x + self.largeur, self.y + self.longueur, fill ="yellow")
+
+    def move(self, joueur):
+        self.canvas.move(self.laser, 0 ,self.vitesse)
+        laser_coords = self.canvas.coords(self.laser)
+
+        if laser_coords[3] > 800:
+            self.canvas.delete(self.laser)
+            return
+        
+        joueur_coords = joueur.Position()
+        if collision(laser_coords, joueur_coords):
+            self.canvas.delete(self.laser)
+            joueur.coeur = joueur.coeur - 1
+            if joueur.coeur == 0:
+                self.canvas.delete(joueur.joueur)
+                Affichage.game_over()
+
+        self.canvas.after(20, self.move, joueur)
+        
 
         
 
@@ -154,6 +193,9 @@ class Affichage:
         self.root.geometry("1200x800")
         self.root.title("Space Invaders")
 
+        self.jeu_terminé = False
+
+
         # Créer le canevas principal
         self.canvas = tk.Canvas(self.root, width=1200, height=800, bg="black")
         self.canvas.pack()
@@ -161,6 +203,7 @@ class Affichage:
         # Créer les aliens
         self.aliens = []       #on remarque ici l'utilisation d'une liste ! permet de retrouver les coordonnées de chaque aliens.
         self.create_aliens()
+
 
         # Créer le joueur/mouvement du joueur
         self.joueur = Joueur(self.canvas, 600, 700, largeur=50, longueur=20, vitesse=20)
@@ -170,10 +213,17 @@ class Affichage:
         self.root.bind("<KeyRelease-Right>", self.joueur.arret)
         self.root.bind("<space>", self.tirer_projectile)
 
+        #Fait tirer les aliens
+        self.aliens_tirent()
+
+
 
         self.root.mainloop()
 
+
     def create_aliens(self):
+        if self.jeu_terminé:
+            return
         vitesse = 3
         alien_spacing_x = 100  # Espacement horizontal
         alien_spacing_y = 70   # Espacement vertical
@@ -187,14 +237,37 @@ class Affichage:
                 alien = Alien(self.canvas, x, y, largeur=50, longueur=50, vitesse=vitesse)
                 self.aliens.append(alien)
                 alien.deplacement()
+    
+    def aliens_tirent(self):
+        if self.jeu_terminé:
+            return
+        if self.aliens: #si la liste existe encore
+            alien = random.choice(self.aliens)
+            alien.tirer_laser(self.joueur)
+        self.root.after(random.randint(1000, 3000), self.aliens_tirent)
 
     def tirer_projectile(self, event):
-        joueur_coords = self.joueur.Position()
-        x = (joueur_coords[0]+ joueur_coords[2]) / 2 #le projectile apparait au milieu du joueur
-        y = joueur_coords[1]  # le projectile se place en haut du joueur
+        if self.jeu_terminé:
+            return
+        temps_init = time.time()
+        print(self.joueur.dernier_tir)
+        if temps_init - self.joueur.dernier_tir > 1 :
+            joueur_coords = self.joueur.Position()
+            x = (joueur_coords[0]+ joueur_coords[2]) / 2 #le projectile apparait au milieu du joueur
+            y = joueur_coords[1]  # le projectile se place en haut du joueur
 
-        projectile = Projectile(self.canvas, x - 5, y - 20, largeur = 10, longueur = 20, vitesse_proj = 10, aliens = self.aliens)
-        projectile.move()
+            projectile = Projectile(self.canvas, x - 5, y - 20, largeur = 10, longueur = 20, vitesse_proj = 10, aliens = self.aliens)
+            projectile.move()
+
+            self.joueur.dernier_tir = temps_init
+
+    def game_over(self):
+        self.jeu_terminé = True
+
+        self.canvas.create_rectangle(0, 0 , 1200, 800, fill ="black", outline ="black")
+        self.canvas.create_text(600, 400, text=" Game Over ", fill = "red", font=("Times new roman", 200))
+
+
 # Lancer l'application
 app = Affichage()
 
