@@ -1,4 +1,4 @@
-import tkinter as tk
+
 
 ### ------------------------------------------------- ###
 ### SPACE INVADERS ###
@@ -61,6 +61,15 @@ class Joueur:
 
         self.canvas.after(20, self.mouvement_continue)
 
+
+def collision(Coords1, Coords2):
+        return not (
+            Coords1[2] < Coords2[0] or  # Droite de obj1 à gauche de obj2
+            Coords1[0] > Coords2[2] or  # Gauche de obj1 à droite de obj2
+            Coords1[3] < Coords2[1] or  # Bas de obj1 au-dessus du haut de obj2
+            Coords1[1] > Coords2[3]     # Haut de obj1 en dessous du bas de obj2
+    )
+
     
 
 class Alien:
@@ -77,12 +86,14 @@ class Alien:
         self.alien = self.canvas.create_rectangle(self.x, self.y, self.x + self.largeur, self.y + self.longueur, fill="red")
         self.listeBlocs = listeBlocs
 
+
     def deplacement(self):
-        coords = self.canvas.coords(self.alien)
+
+        coords_alien = self.canvas.coords(self.alien)
         # Déplacement horizontal
         if self.dx != 0:
-            self.y = coords[1]
-            if (coords[0] <= 0 and self.dx < 0) or (coords[2] >= 1200 and self.dx > 0):  # Limites gauche/droite
+            self.y = coords_alien[1]
+            if (coords_alien[0] <= 0 and self.dx < 0) or (coords_alien[2] >= 1200 and self.dx > 0):  # Limites gauche/droite
                 self.dx = 0
                 self.dy = self.vitesse  # Commencer à descendre
             else:  
@@ -91,20 +102,19 @@ class Alien:
         # Déplacement vertical (descente)
         if self.dy != 0:
             # Vérifier si l'alien a atteint la limite de descente
-            if coords[1] >= self.y + self.step_down:  # Si l'alien a descendu de la distance définie
+            if coords_alien[1] >= self.y + self.step_down:  # Si l'alien a descendu de la distance définie
                 self.dy = 0  # Arrêter la descente
                 # Inverser la direction horizontale (dx)
-                if coords[0] <= 0:
+                if coords_alien[0] <= 0:
                     self.dx = self.vitesse
                 else:
                     self.dx = - self.vitesse
             else:
                 self.canvas.move(self.alien, 0, self.dy)
+            
+            self.canvas.after(10, self.deplacement)
 
-                
 
-        # Répéter le mouvement
-        self.canvas.after(10, self.deplacement)
 
     def tirer_laser(self, joueur):
         coords = self.canvas.coords(self.alien)
@@ -116,13 +126,6 @@ class Alien:
 
 
 
-def collision(Coords1, Coords2):
-        return not (
-            Coords1[2] < Coords2[0] or  # Droite de obj1 à gauche de obj2
-            Coords1[0] > Coords2[2] or  # Gauche de obj1 à droite de obj2
-            Coords1[3] < Coords2[1] or  # Bas de obj1 au-dessus du haut de obj2
-            Coords1[1] > Coords2[3]     # Haut de obj1 en dessous du bas de obj2
-    )
 
 class protectionJoueur() : 
     def __init__(self, canvas, posx, posy) : 
@@ -252,11 +255,6 @@ class Affichage:
 
 
 
-        # Créer les aliens
-        self.aliens = []       #on remarque ici l'utilisation d'une liste ! permet de retrouver les coordonnées de chaque aliens.
-        self.create_aliens(self.listeBlocs)
-
-
         # Créer le joueur/mouvement du joueur
         self.joueur = Joueur(self.canvas, 600, 700, largeur=50, longueur=20, vitesse=20)
         self.root.bind("<Left>", self.joueur.deplacer_gauche)
@@ -264,6 +262,14 @@ class Affichage:
         self.root.bind("<KeyRelease-Left>", self.joueur.arret)
         self.root.bind("<KeyRelease-Right>", self.joueur.arret)
         self.root.bind("<space>", self.tirer_projectile)
+
+        # Créer les aliens
+        self.aliens = []       #on remarque ici l'utilisation d'une liste ! permet de retrouver les coordonnées de chaque aliens.
+        self.create_aliens(self.listeBlocs)
+
+
+        #Design du jeu
+
 
         self.footer = tk.Canvas(self.root, width=self.longueur, height=60)
         self.footer.place(y=740)
@@ -299,6 +305,9 @@ class Affichage:
         #Fait tirer les aliens
         self.aliens_tirent()
 
+        #Regarde si l'alien touche le joueur
+        self.toucher(self.joueur)
+
         self.root.after(2000, self.mise_a_jour_vie)
         self.root.mainloop()
 
@@ -330,7 +339,7 @@ class Affichage:
     def create_aliens(self, liste_Blocs):
         if self.jeu_terminé:
             return
-        vitesse = 3
+        vitesse = 10
         alien_spacing_x = 100  # Espacement horizontal
         alien_spacing_y = 70   # Espacement vertical
         num_rows = 3
@@ -342,7 +351,19 @@ class Affichage:
                 y = 50 + row * alien_spacing_y
                 alien = Alien(self.canvas, x, y, largeur=50, longueur=50, vitesse=vitesse, listeBlocs = liste_Blocs)
                 self.aliens.append(alien)
-                alien.deplacement()
+
+        self.deplacer_aliens()
+
+
+    def deplacer_aliens(self):
+        if self.jeu_terminé:
+            return
+
+        for alien in self.aliens:
+            alien.deplacement()
+
+        self.root.after(10, self.deplacer_aliens) 
+
     
 
 
@@ -385,6 +406,27 @@ class Affichage:
 
             self.joueur.dernier_tir = temps_init
 
+
+
+    def toucher(self, joueur) :
+        if self.jeu_terminé:
+            return
+        
+        coords_joueur = self.joueur.Position()
+
+        for alien in self.aliens :
+            coords_alien = self.canvas.coords(alien.alien)
+
+            if collision(coords_alien, coords_joueur):
+                self.canvas.delete(self.joueur.joueur)
+                self.game_over()
+                return
+        
+        # Répéter le mouvement
+        self.root.after(50, self.toucher, joueur)
+
+
+
     def game_over(self):
         self.jeu_terminé = True
 
@@ -392,6 +434,7 @@ class Affichage:
 
         self.canvas.create_rectangle(0, 0 , 1200, 800, fill ="red", outline ="red")
         self.canvas.create_text(600, 400, text=" Game Over ", fill = "red", font=("Purisan", 200))
+        
 
 
 # Lancer l'application
