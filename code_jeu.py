@@ -21,6 +21,7 @@ class Joueur:
         self.longueur = longueur
         self.vitesse = vitesse
         self.direction = 0
+        self.score = 0
         self.coeur = 3
         self.dernier_tir = 0
 
@@ -63,7 +64,7 @@ class Joueur:
     
 
 class Alien:
-    def __init__(self, app, x, y, largeur, longueur, vitesse):
+    def __init__(self, app, x, y, largeur, longueur, vitesse, listeBlocs):
         self.canvas = app
         self.x = x
         self.y = y
@@ -74,6 +75,7 @@ class Alien:
         self.dy = 0
         self.step_down = 50 # Distance de descente
         self.alien = self.canvas.create_rectangle(self.x, self.y, self.x + self.largeur, self.y + self.longueur, fill="red")
+        self.listeBlocs = listeBlocs
 
     def deplacement(self):
         coords = self.canvas.coords(self.alien)
@@ -109,7 +111,7 @@ class Alien:
         x = (coords[0]+coords[2])/2
         y = coords[3]
 
-        laser = LaserAlien(self.canvas, x - 5, y, largeur = 10, longueur = 20, vitesse = 5, affichage = self.canvas.master)
+        laser = LaserAlien(self.canvas, x - 5, y, largeur = 10, longueur = 20, vitesse = 5, affichage = self.canvas.master, listeBlocs = self.listeBlocs)
         laser.move(joueur)
 
 
@@ -135,7 +137,7 @@ class protectionJoueur() :
         self.protection = self.canvas.create_rectangle(self.posX, self.posY, self.posX + self.largeur, self.posY + self.longueur, fill="yellow")
 
 class Projectile:
-    def __init__(self, app, x, y, largeur, longueur, vitesse_proj, aliens, listeBlocs):
+    def __init__(self, app, x, y, largeur, longueur, vitesse_proj, aliens, listeBlocs, joueur):
         self.canvas = app
         self.x = x
         self.y = y
@@ -144,6 +146,7 @@ class Projectile:
         self.vitesse = vitesse_proj
         self.aliens = aliens
         self.listeBlocs = listeBlocs
+        self.joueur = joueur
 
 
         self.projectile = self.canvas.create_rectangle(self.x, self.y,self.x + self.largeur, self.y + self.longueur,fill="yellow")
@@ -166,6 +169,7 @@ class Projectile:
                 self.canvas.delete(aliens.alien)
                 self.canvas.delete(self.projectile)
                 self.aliens.remove(aliens)
+                self.joueur.score = self.joueur.score + 100
         self.canvas.after(20, self.move)
 
         for listeBloc in self.listeBlocs:
@@ -179,7 +183,7 @@ class Projectile:
                     self.blocs.remove(blocs)
 
 class LaserAlien:
-    def __init__(self, app, x, y, largeur, longueur, vitesse, affichage ):
+    def __init__(self, app, x, y, largeur, longueur, vitesse, affichage, listeBlocs):
         self.canvas = app
         self.x = x
         self.y = y 
@@ -188,6 +192,8 @@ class LaserAlien:
         self.vitesse = vitesse
         self.affichage = affichage
         self.laser = self.canvas.create_rectangle( self.x, self.y , self.x + self.largeur, self.y + self.longueur, fill ="yellow")
+        self.listeBlocs = listeBlocs
+
 
     def move(self, joueur):
         self.canvas.move(self.laser, 0 ,self.vitesse)
@@ -206,6 +212,16 @@ class LaserAlien:
                 self.affichage.game_over()
 
         self.canvas.after(20, self.move, joueur)
+
+        for listeBloc in self.listeBlocs:
+            for blocs in listeBloc :
+                blocs_coords = self.canvas.coords(blocs.protection)
+                if not blocs_coords:  # Skip if block has been deleted
+                    continue
+                if collision(laser_coords, blocs_coords):
+                    self.canvas.delete(blocs.protection)
+                    self.canvas.delete(self.laser)
+                    self.blocs.remove(blocs)
         
 
         
@@ -227,16 +243,18 @@ class Affichage:
         self.canvas = tk.Canvas(self.root, width=1200, height=800, bg="black")
         self.canvas.pack()
 
-        # Créer les aliens
-        self.aliens = []       #on remarque ici l'utilisation d'une liste ! permet de retrouver les coordonnées de chaque aliens.
-        self.create_aliens()
-
         # créer les potections 
         self.listeBloc1, self.listeBloc2, self.listeBloc3 = [], [], []
         self.listeBlocs = [self.listeBloc1, self.listeBloc2, self.listeBloc3]
         self.create_bloc(self.listeBloc1, 155, 533)
         self.create_bloc(self.listeBloc1, 540, 533)
         self.create_bloc(self.listeBloc1, 860, 533)
+
+
+
+        # Créer les aliens
+        self.aliens = []       #on remarque ici l'utilisation d'une liste ! permet de retrouver les coordonnées de chaque aliens.
+        self.create_aliens(self.listeBlocs)
 
 
         # Créer le joueur/mouvement du joueur
@@ -255,12 +273,16 @@ class Affichage:
         self.footerGauche.pack(side="left")
         self.footerGauche.configure(bg="black")
 
-        self.score = "Score : " + str(300)
+        self.score = "Score : " + str(self.joueur.score)
         self.scoreAffichage = tk.Label(self.footerGauche, text=self.score, fg="white", bg="black", font=('Futura', 20), highlightthickness=5)
         self.scoreAffichage.pack(side="left")
-        self.nbVies = str(3) + " vies"
+        self.nbVies = str(self.joueur.coeur) + " Vies"
         self.nbViesAffichage = tk.Label(self.footerGauche, text=self.nbVies, fg="white", bg="black", font=('Futura', 20), highlightthickness=5)
         self.nbViesAffichage.pack(side="right")
+
+
+        self.mise_a_jour_vie()
+        self.mise_a_jour_score()
 
         self.footerDroite = tk.Canvas(self.footer, width=600, height=60, highlightthickness=0)
         self.footerDroite.pack(side="right")
@@ -277,12 +299,35 @@ class Affichage:
         #Fait tirer les aliens
         self.aliens_tirent()
 
-
-
+        self.root.after(2000, self.mise_a_jour_vie)
         self.root.mainloop()
 
 
-    def create_aliens(self):
+    def mise_a_jour_vie(self):
+            self.nbViesAffichage.config(text =f"{self.joueur.coeur}  Vies")
+            self.nbViesAffichage.pack(side="right")
+            self.root.after(200, self.mise_a_jour_vie)
+        
+    def mise_a_jour_score(self):
+        self.scoreAffichage.config(text=f"Score : {self.joueur.score}")
+        self.scoreAffichage.pack(side="left")
+        self.root.after(200, self.mise_a_jour_score)
+
+
+    def create_bloc(self, listeBloc, posX, posY) :
+        ecart_blocs = 30
+        nombre_lignes, nombre_colonnes = 3, 6
+
+        for i in range(nombre_lignes) :
+            for j in range(nombre_colonnes) :
+                x = posX + 30 + j * ecart_blocs
+                y = posY + 30 + i * ecart_blocs
+                protec = protectionJoueur(self.canvas, x, y)
+                listeBloc.append(protec)
+
+
+
+    def create_aliens(self, liste_Blocs):
         if self.jeu_terminé:
             return
         vitesse = 3
@@ -295,21 +340,12 @@ class Affichage:
             for col in range(num_columns):
                 x = 100 + col * alien_spacing_x
                 y = 50 + row * alien_spacing_y
-                alien = Alien(self.canvas, x, y, largeur=50, longueur=50, vitesse=vitesse)
+                alien = Alien(self.canvas, x, y, largeur=50, longueur=50, vitesse=vitesse, listeBlocs = liste_Blocs)
                 self.aliens.append(alien)
                 alien.deplacement()
-
-    def create_bloc(self, listeBloc, posX, posY) :
-        ecart_blocs = 30
-        nombre_lignes, nombre_colonnes = 3, 6
-
-        for i in range(nombre_lignes) :
-            for j in range(nombre_colonnes) :
-                x = posX + 30 + j * ecart_blocs
-                y = posY + 30 + i * ecart_blocs
-                protec = protectionJoueur(self.canvas, x, y)
-                listeBloc.append(protec)
     
+
+
     def aliens_tirent(self):
         if self.jeu_terminé:
             return
@@ -324,13 +360,6 @@ class Affichage:
         # Créer les aliens
         self.aliens = []       #on remarque ici l'utilisation d'une liste ! permet de retrouver les coordonnées de chaque aliens.
         self.create_aliens()
-
-        # créer les potections 
-        self.listeBloc1, self.listeBloc2, self.listeBloc3 = [], [], []
-        self.listeBlocs = [self.listeBloc1, self.listeBloc2, self.listeBloc3]
-        self.create_bloc(self.listeBloc1, 155, 533)
-        self.create_bloc(self.listeBloc1, 540, 533)
-        self.create_bloc(self.listeBloc1, 860, 533)
 
         # Créer le joueur/mouvement du joueur
         self.joueur = Joueur(self.canvas, 600, 700, largeur=50, longueur=20, vitesse=20)
@@ -351,7 +380,7 @@ class Affichage:
             x = (joueur_coords[0]+ joueur_coords[2]) / 2 #le projectile apparait au milieu du joueur
             y = joueur_coords[1]  # le projectile se place en haut du joueur
 
-            projectile = Projectile(self.canvas, x - 5, y - 20, largeur = 10, longueur = 20, vitesse_proj = 10, aliens = self.aliens,  listeBlocs=self.listeBlocs)
+            projectile = Projectile(self.canvas, x - 5, y - 20, largeur = 10, longueur = 20, vitesse_proj = 10, aliens = self.aliens,  listeBlocs=self.listeBlocs, joueur =self.joueur)
             projectile.move()
 
             self.joueur.dernier_tir = temps_init

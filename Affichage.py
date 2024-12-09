@@ -5,10 +5,10 @@ class Affichage:
             self.mw=tk.Tk()
             self.mw.title("Space Invaders")
             self.mw.geometry('1270x830')
-            image_chemin ="3ETI-CSDEV-Space-Invaders-1/images/Espace_Background.jpg"
+            image_chemin ="..//3ETI-CSDEV-SPACE-INVADERS-1/images/Espace_Background.jpg"
             img1 = Image.open(image_chemin)
             bg = ImageTk.PhotoImage(img1)
-            Logo_chemin="3ETI-CSDEV-Space-Invaders-1/images/Logo_Space_Invaders.jpeg"
+            Logo_chemin="../3ETI-CSDEV-SPACE-INVADERS-1/images/Logo_Space_Invaders.jpeg"
             img2 = Image.open(Logo_chemin)
             img2 = img2.resize((200, 200))
             lg = ImageTk.PhotoImage(img2)
