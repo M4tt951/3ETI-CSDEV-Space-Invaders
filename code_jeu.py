@@ -339,7 +339,7 @@ class Affichage:
     def create_aliens(self, liste_Blocs):
         if self.jeu_terminé:
             return
-        vitesse = 10
+        vitesse = 3
         alien_spacing_x = 100  # Espacement horizontal
         alien_spacing_y = 70   # Espacement vertical
         num_rows = 3
@@ -362,7 +362,8 @@ class Affichage:
         for alien in self.aliens:
             alien.deplacement()
 
-        self.root.after(10, self.deplacer_aliens) 
+        if not self.jeu_terminé:
+            self.deplacement_id = self.root.after(10, self.deplacer_aliens)
 
     
 
@@ -373,22 +374,51 @@ class Affichage:
         if self.aliens: #si la liste existe encore
             alien = random.choice(self.aliens)
             alien.tirer_laser(self.joueur)
-        self.root.after(random.randint(1000, 3000), self.aliens_tirent)
+        if not self.jeu_terminé:
+            self.tirer_id = self.root.after(random.randint(1000, 3000), self.aliens_tirent)
 
-    def relaunch(self) :
+
+
+
+    def relaunch(self):
+
+        self.jeu_terminé = True
+        if hasattr(self, 'deplacement_id'):   #vérifie si l'objet existe. si c'est le cas, alors on arrête les anciennes boucles
+            self.root.after_cancel(self.deplacement_id)
+            self.root.after_cancel(self.tirer_id)
+    # Réinitialiser l'état du jeu
+        self.jeu_terminé = False
+
+        # Supprimer tout le contenu du canvas
         self.canvas.delete("all")
 
-        # Créer les aliens
-        self.aliens = []       #on remarque ici l'utilisation d'une liste ! permet de retrouver les coordonnées de chaque aliens.
-        self.create_aliens()
+        # Réinitialiser les blocs
+        self.listeBloc1, self.listeBloc2, self.listeBloc3 = [], [], []
+        self.listeBlocs = [self.listeBloc1, self.listeBloc2, self.listeBloc3]
+        self.create_bloc(self.listeBloc1, 155, 533)
+        self.create_bloc(self.listeBloc2, 540, 533)
+        self.create_bloc(self.listeBloc3, 860, 533)
 
-        # Créer le joueur/mouvement du joueur
-        self.joueur = Joueur(self.canvas, 600, 700, largeur=50, longueur=20, vitesse=20)
-        self.root.bind("<Left>", self.joueur.deplacer_gauche)
-        self.root.bind("<Right>", self.joueur.deplacer_droite)
-        self.root.bind("<KeyRelease-Left>", self.joueur.arret)
-        self.root.bind("<KeyRelease-Right>", self.joueur.arret)
-        self.root.bind("<space>", self.tirer_projectile)
+        # Réinitialiser le joueur
+        self.joueur.score = 0
+        self.joueur.coeur = 3
+        self.joueur.dernier_tir = 0
+        self.joueur.joueur = self.canvas.create_rectangle(
+            600, 700, 650, 720, fill="white"
+        )  # Créez à nouveau l'objet graphique du joueur
+
+        # Mettre à jour les affichages de score et de vies
+        self.mise_a_jour_score()
+        self.mise_a_jour_vie()
+
+        # Réinitialiser les aliens
+        self.aliens = []
+        self.create_aliens(self.listeBlocs)
+
+        # Relancer les tirs des aliens et vérifier les collisions
+        self.aliens_tirent()
+        self.toucher(self.joueur)
+
 
 
     def tirer_projectile(self, event):
@@ -430,10 +460,9 @@ class Affichage:
     def game_over(self):
         self.jeu_terminé = True
 
-        print("la")
 
         self.canvas.create_rectangle(0, 0 , 1200, 800, fill ="red", outline ="red")
-        self.canvas.create_text(600, 400, text=" Game Over ", fill = "red", font=("Purisan", 200))
+        self.canvas.create_text(600, 300, text=" Game Over ", fill = "black", font=("Purisan", 100))
         
 
 
