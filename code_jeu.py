@@ -140,7 +140,7 @@ class protectionJoueur() :
         self.protection = self.canvas.create_rectangle(self.posX, self.posY, self.posX + self.largeur, self.posY + self.longueur, fill="yellow")
 
 class Projectile:
-    def __init__(self, app, x, y, largeur, longueur, vitesse_proj, aliens, listeBlocs, joueur):
+    def __init__(self, app, x, y, largeur, longueur, vitesse_proj, aliens, alien_special, listeBlocs, joueur):
         self.canvas = app
         self.x = x
         self.y = y
@@ -148,6 +148,7 @@ class Projectile:
         self.longueur = 30
         self.vitesse = vitesse_proj
         self.aliens = aliens
+        self.alien_special= alien_special
         self.listeBlocs = listeBlocs
         self.joueur = joueur
 
@@ -161,6 +162,8 @@ class Projectile:
 
         projectile_coords = self.canvas.coords(self.projectile)
 
+        aliens_special_coords = []
+
         
         if projectile_coords[1] < 0:
             self.canvas.delete(self.projectile)
@@ -173,7 +176,6 @@ class Projectile:
                 self.canvas.delete(self.projectile)
                 self.aliens.remove(aliens)
                 self.joueur.score = self.joueur.score + 100
-        self.canvas.after(20, self.move)
 
         for listeBloc in self.listeBlocs:
             for blocs in listeBloc :
@@ -184,6 +186,55 @@ class Projectile:
                     self.canvas.delete(blocs.protection)
                     self.canvas.delete(self.projectile)
                     self.blocs.remove(blocs)
+
+        if self.canvas.coords(self.alien_special.alien_objet):  # Vérifiez si l'objet graphique existe
+            aliens_special_coords = self.canvas.coords(self.alien_special.alien_objet)
+
+        if aliens_special_coords and collision(projectile_coords, aliens_special_coords):
+            self.canvas.delete(self.alien_special.alien_objet)
+            self.canvas.delete(self.projectile)
+            self.joueur.score = self.joueur.score + 150
+            return
+
+        self.canvas.after(20, self.move)
+        
+
+
+class AlienSS :
+    def __init__(self, app, x, y, largeur, longueur, vitesse):
+        self.canvas = app
+        self.x = x
+        self.y = y
+        self.largeur = 50
+        self.longueur = 50
+        self.vitesse = vitesse
+        self.dx = 0
+        self.dy = 0
+        self.alien_objet = self.canvas.create_rectangle(self.x, self.y, self.x + self.largeur, self.y + self.longueur, fill="green")
+
+    def deplacement(self, rand):
+        
+        if rand == 0:
+            self.x = 0
+            self.y =random.uniform(10, 500)
+            self.dx = self.vitesse
+            self.canvas.move(self.alien_objet, self.dx, 0)
+            if self.x > 1200 :
+                self.canvas.delete(self.alien_objet)
+                self.canvas.move(self.alien_objet, self.dx, 0)
+        else:
+            self.x = 1200
+            self.y =random.uniform(10, 500)
+            self.dx = - self.vitesse
+            self.canvas.move(self.alien_objet, self.dx, 0)
+            if self.x < 0 :
+                self.canvas.delete(self.alien_objet)
+
+        self.canvas.after(10, self.deplacement, rand)
+                
+        
+            
+        
 
 class LaserAlien:
     def __init__(self, app, x, y, largeur, longueur, vitesse, affichage, listeBlocs):
@@ -199,6 +250,7 @@ class LaserAlien:
 
 
     def move(self, joueur):
+
         self.canvas.move(self.laser, 0 ,self.vitesse)
         laser_coords = self.canvas.coords(self.laser)
 
@@ -210,11 +262,7 @@ class LaserAlien:
         if collision(laser_coords, joueur_coords):
             self.canvas.delete(self.laser)
             joueur.coeur = joueur.coeur - 1
-            if joueur.coeur == 0:
-                self.canvas.delete(joueur.joueur)
-                self.affichage.game_over()
 
-        self.canvas.after(20, self.move, joueur)
 
         for listeBloc in self.listeBlocs:
             for blocs in listeBloc :
@@ -225,7 +273,10 @@ class LaserAlien:
                     self.canvas.delete(blocs.protection)
                     self.canvas.delete(self.laser)
                     self.blocs.remove(blocs)
+
+        self.canvas.after(20, self.move, joueur)
         
+
 
         
 
@@ -266,6 +317,9 @@ class Affichage:
         # Créer les aliens
         self.aliens = []       #on remarque ici l'utilisation d'une liste ! permet de retrouver les coordonnées de chaque aliens.
         self.create_aliens(self.listeBlocs)
+
+
+        self.create_aliensss()
 
 
         #Design du jeu
@@ -316,6 +370,8 @@ class Affichage:
             self.nbViesAffichage.config(text =f"{self.joueur.coeur}  Vies")
             self.nbViesAffichage.pack(side="right")
             self.root.after(200, self.mise_a_jour_vie)
+            if self.joueur.coeur==0:
+                self.game_over()
         
     def mise_a_jour_score(self):
         self.scoreAffichage.config(text=f"Score : {self.joueur.score}")
@@ -354,6 +410,22 @@ class Affichage:
 
         self.deplacer_aliens()
 
+    def create_aliensss(self):
+        if self.jeu_terminé:
+            return
+        vitesse=2
+        rand = random.randint(0,1)
+
+        if rand == 0:
+            x=0
+            y=random.uniform(200, 500)
+            alienss = AlienSS(self.canvas, x, y, largeur =30, longueur = 50, vitesse = vitesse)
+            self.alienss = alienss
+            self.deplacer_alienss(rand)
+
+        self.root.after(10000, self.create_aliensss)
+
+
 
     def deplacer_aliens(self):
         if self.jeu_terminé:
@@ -366,6 +438,10 @@ class Affichage:
             self.deplacement_id = self.root.after(10, self.deplacer_aliens)
 
     
+    def deplacer_alienss(self, rand):
+        if self.jeu_terminé:
+            return
+        self.alienss.deplacement(rand)
 
 
     def aliens_tirent(self):
@@ -375,7 +451,7 @@ class Affichage:
             alien = random.choice(self.aliens)
             alien.tirer_laser(self.joueur)
         if not self.jeu_terminé:
-            self.tirer_id = self.root.after(random.randint(1000, 3000), self.aliens_tirent)
+            self.tirer_id = self.root.after(random.randint(500, 1000), self.aliens_tirent)
 
 
 
@@ -419,6 +495,8 @@ class Affichage:
         self.aliens_tirent()
         self.toucher(self.joueur)
 
+        self.create_aliensss()
+
 
 
     def tirer_projectile(self, event):
@@ -431,7 +509,7 @@ class Affichage:
             x = (joueur_coords[0]+ joueur_coords[2]) / 2 #le projectile apparait au milieu du joueur
             y = joueur_coords[1]  # le projectile se place en haut du joueur
 
-            projectile = Projectile(self.canvas, x - 5, y - 20, largeur = 10, longueur = 20, vitesse_proj = 10, aliens = self.aliens,  listeBlocs=self.listeBlocs, joueur =self.joueur)
+            projectile = Projectile(self.canvas, x - 5, y - 20, largeur = 10, longueur = 20, vitesse_proj = 10, aliens = self.aliens, alien_special = self.alienss, listeBlocs=self.listeBlocs, joueur =self.joueur)
             projectile.move()
 
             self.joueur.dernier_tir = temps_init
