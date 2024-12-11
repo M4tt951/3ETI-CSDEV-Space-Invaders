@@ -1,4 +1,5 @@
 import tkinter as tk
+import random
 from Collisions import collision
 
 
@@ -17,12 +18,14 @@ class Alien:
         self.alien = self.canvas.create_rectangle(self.x, self.y, self.x + self.largeur, self.y + self.longueur, fill="red")
         self.listeBlocs = listeBlocs
 
+
     def deplacement(self):
-        coords = self.canvas.coords(self.alien)
+
+        coords_alien = self.canvas.coords(self.alien)
         # Déplacement horizontal
         if self.dx != 0:
-            self.y = coords[1]
-            if (coords[0] <= 0 and self.dx < 0) or (coords[2] >= 1200 and self.dx > 0):  # Limites gauche/droite
+            self.y = coords_alien[1]
+            if (coords_alien[0] <= 0 and self.dx < 0) or (coords_alien[2] >= 1200 and self.dx > 0):  # Limites gauche/droite
                 self.dx = 0
                 self.dy = self.vitesse  # Commencer à descendre
             else:  
@@ -31,20 +34,19 @@ class Alien:
         # Déplacement vertical (descente)
         if self.dy != 0:
             # Vérifier si l'alien a atteint la limite de descente
-            if coords[1] >= self.y + self.step_down:  # Si l'alien a descendu de la distance définie
+            if coords_alien[1] >= self.y + self.step_down:  # Si l'alien a descendu de la distance définie
                 self.dy = 0  # Arrêter la descente
                 # Inverser la direction horizontale (dx)
-                if coords[0] <= 0:
+                if coords_alien[0] <= 0:
                     self.dx = self.vitesse
                 else:
                     self.dx = - self.vitesse
             else:
                 self.canvas.move(self.alien, 0, self.dy)
+            
+            self.canvas.after(10, self.deplacement)
 
-                
 
-        # Répéter le mouvement
-        self.canvas.after(10, self.deplacement)
 
     def tirer_laser(self, joueur):
         coords = self.canvas.coords(self.alien)
@@ -69,6 +71,7 @@ class LaserAlien:
 
 
     def move(self, joueur):
+
         self.canvas.move(self.laser, 0 ,self.vitesse)
         laser_coords = self.canvas.coords(self.laser)
 
@@ -80,11 +83,7 @@ class LaserAlien:
         if collision(laser_coords, joueur_coords):
             self.canvas.delete(self.laser)
             joueur.coeur = joueur.coeur - 1
-            if joueur.coeur == 0:
-                self.canvas.delete(joueur.joueur)
-                self.affichage.game_over()
 
-        self.canvas.after(20, self.move, joueur)
 
         for listeBloc in self.listeBlocs:
             for blocs in listeBloc :
@@ -95,3 +94,39 @@ class LaserAlien:
                     self.canvas.delete(blocs.protection)
                     self.canvas.delete(self.laser)
                     self.blocs.remove(blocs)
+
+        self.canvas.after(20, self.move, joueur)
+        
+
+
+class AlienSS :
+    def __init__(self, app, x, y, largeur, longueur, vitesse):
+        self.canvas = app
+        self.x = x
+        self.y = y
+        self.largeur = 50
+        self.longueur = 50
+        self.vitesse = vitesse
+        self.dx = 0
+        self.dy = 0
+        self.alien_objet = self.canvas.create_rectangle(self.x, self.y, self.x + self.largeur, self.y + self.longueur, fill="green")
+
+    def deplacement(self, rand):
+        
+        if rand == 0:
+            self.x = 0
+            self.y =random.uniform(10, 500)
+            self.dx = self.vitesse
+            self.canvas.move(self.alien_objet, self.dx, 0)
+            if self.x > 1200 :
+                self.canvas.delete(self.alien_objet)
+                self.canvas.move(self.alien_objet, self.dx, 0)
+        else:
+            self.x = 1200
+            self.y =random.uniform(10, 500)
+            self.dx = - self.vitesse
+            self.canvas.move(self.alien_objet, self.dx, 0)
+            if self.x < 0 :
+                self.canvas.delete(self.alien_objet)
+
+        self.canvas.after(10, self.deplacement, rand)

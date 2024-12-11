@@ -66,7 +66,7 @@ class protectionJoueur :
 
 
 class Projectile:
-    def __init__(self, app, x, y, largeur, longueur, vitesse_proj, aliens, listeBlocs, joueur):
+    def __init__(self, app, x, y, largeur, longueur, vitesse_proj, aliens, alien_special, listeBlocs, joueur):
         self.canvas = app
         self.x = x
         self.y = y
@@ -74,6 +74,7 @@ class Projectile:
         self.longueur = 30
         self.vitesse = vitesse_proj
         self.aliens = aliens
+        self.alien_special= alien_special
         self.listeBlocs = listeBlocs
         self.joueur = joueur
 
@@ -87,6 +88,8 @@ class Projectile:
 
         projectile_coords = self.canvas.coords(self.projectile)
 
+        aliens_special_coords = []
+
         
         if projectile_coords[1] < 0:
             self.canvas.delete(self.projectile)
@@ -99,7 +102,6 @@ class Projectile:
                 self.canvas.delete(self.projectile)
                 self.aliens.remove(aliens)
                 self.joueur.score = self.joueur.score + 100
-        self.canvas.after(20, self.move)
 
         for listeBloc in self.listeBlocs:
             for blocs in listeBloc :
@@ -110,3 +112,14 @@ class Projectile:
                     self.canvas.delete(blocs.protection)
                     self.canvas.delete(self.projectile)
                     self.blocs.remove(blocs)
+
+        if self.canvas.coords(self.alien_special.alien_objet):  # Vérifiez si l'objet graphique existe
+            aliens_special_coords = self.canvas.coords(self.alien_special.alien_objet)
+
+        if aliens_special_coords and collision(projectile_coords, aliens_special_coords):
+            self.canvas.delete(self.alien_special.alien_objet)
+            self.canvas.delete(self.projectile)
+            self.joueur.score = self.joueur.score + 150
+            return
+
+        self.canvas.after(20, self.move)
