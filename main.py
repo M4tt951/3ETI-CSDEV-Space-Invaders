@@ -5,8 +5,6 @@ import time
 from Class_joueur import Joueur, protectionJoueur, Projectile
 from Class_Aliens import Alien, LaserAlien
 
-print(dir(Joueur))
-
 
 
 
@@ -87,9 +85,9 @@ class Affichage:
 
 
     def mise_a_jour_vie(self):
-            self.nbViesAffichage.config(text =f"{self.joueur.coeur}  Vies")
-            self.nbViesAffichage.pack(side="right")
-            self.root.after(200, self.mise_a_jour_vie)
+        self.nbViesAffichage.config(text =f"{self.joueur.coeur}  Vies")
+        self.nbViesAffichage.pack(side="right")
+        self.root.after(200, self.mise_a_jour_vie)
         
     def mise_a_jour_score(self):
         self.scoreAffichage.config(text=f"Score : {self.joueur.score}")
