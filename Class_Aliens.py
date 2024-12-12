@@ -111,22 +111,11 @@ class AlienSS :
         self.dy = 0
         self.alien_objet = self.canvas.create_rectangle(self.x, self.y, self.x + self.largeur, self.y + self.longueur, fill="green")
 
-    def deplacement(self, rand):
+    def deplacement(self):
         
-        if rand == 0:
-            self.x = 0
-            self.y =random.uniform(10, 500)
-            self.dx = self.vitesse
-            self.canvas.move(self.alien_objet, self.dx, 0)
-            if self.x > 1200 :
-                self.canvas.delete(self.alien_objet)
-                self.canvas.move(self.alien_objet, self.dx, 0)
-        else:
-            self.x = 1200
-            self.y =random.uniform(10, 500)
-            self.dx = - self.vitesse
-            self.canvas.move(self.alien_objet, self.dx, 0)
-            if self.x < 0 :
-                self.canvas.delete(self.alien_objet)
+        self.x = self.x + self.vitesse
 
-        self.canvas.after(10, self.deplacement, rand)
+        self.canvas.move(self.alien_objet, self.vitesse, 0)
+
+        if self.x > 1200:
+            self.canvas.delete(self.alien_objet)

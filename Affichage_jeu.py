@@ -140,19 +140,16 @@ class Affichage:
         self.deplacer_aliens()
 
     def create_aliensss(self):
-        if self.jeu_terminé:
+        if self.jeu_terminé or hasattr(self, 'alienss') and self.canvas.coords(self.alienss.alien_objet):
             return
-        vitesse=2
-        rand = random.randint(0,1)
 
-        if rand == 0:
-            x=0
-            y=random.uniform(200, 500)
-            alienss = AlienSS(self.canvas, x, y, largeur =30, longueur = 50, vitesse = vitesse)
-            self.alienss = alienss
-            self.deplacer_alienss(rand)
-
-        self.root.after(10000, self.create_aliensss)
+        x = 0
+        y = random.uniform(200, 500)
+        alienss = AlienSS(self.canvas, x, y, largeur=30, longueur=50, vitesse=5)
+        self.alienss = alienss
+        self.deplacer_alienss()
+        delai = random.randint(5000, 10000)  # en millisecondes
+        self.root.after(delai, self.create_aliensss)
 
 
 
@@ -167,10 +164,15 @@ class Affichage:
             self.deplacement_id = self.root.after(10, self.deplacer_aliens)
 
     
-    def deplacer_alienss(self, rand):
+    def deplacer_alienss(self):
         if self.jeu_terminé:
             return
-        self.alienss.deplacement(rand)
+
+        if self.alienss:
+            if not self.alienss.deplacement():  # Si l'alien est supprimé
+                self.create_aliensss()         # En recréer un
+        self.root.after(10, self.deplacer_alienss)  # Boucle de déplacement
+
 
 
     def aliens_tirent(self):
